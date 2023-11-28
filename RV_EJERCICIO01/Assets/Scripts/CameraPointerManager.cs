@@ -29,9 +29,16 @@ public class CameraPointerManager : MonoBehaviour
             if (_gazedAtObject != hit.transform.gameObject)
             {
                 // New GameObject.
-                _gazedAtObject?.SendMessage("OnPointerExit",null,SendMessageOptions.DontRequireReceiver);
+                _gazedAtObject?.SendMessage("OnPointerExit", null, SendMessageOptions.DontRequireReceiver);
                 _gazedAtObject = hit.transform.gameObject;
-                _gazedAtObject.SendMessage("OnPointerEnter",null, SendMessageOptions.DontRequireReceiver);
+                _gazedAtObject.SendMessage("OnPointerEnter", null, SendMessageOptions.DontRequireReceiver);
+            }
+            if (hit.transform.CompareTag(interactableTag))
+            {
+                PointerOnGaze(hit.point);
+            }
+            else {
+                PointerOutGaze();
             }
         }
         else
