@@ -18,6 +18,14 @@ public class CameraPointerManager : MonoBehaviour
     /// <summary>
     /// Update is called once per frame.
     /// </summary>
+
+    private void Start() {
+           GazeManager.Instance.OnGazeSelection += GazeSelection;
+    }
+    private void GazeSelection()
+    {
+        _gazedAtObject?.SendMessage("OnPointerClicks", null, SendMessageOptions.DontRequireReceiver);
+    }
     public void Update()
     {
         // Casts ray towards camera's forward direction, to detect if a GameObject is being gazed
@@ -44,14 +52,14 @@ public class CameraPointerManager : MonoBehaviour
         else
         {
             // No GameObject detected in front of the camera.
-            _gazedAtObject?.SendMessage("OnPointerExit" ,null, SendMessageOptions.DontRequireReceiver);
+            _gazedAtObject?.SendMessage("OnPointerExit" , null, SendMessageOptions.DontRequireReceiver);
             _gazedAtObject = null;
         }
 
         // Checks for screen touches.
         if (Google.XR.Cardboard.Api.IsTriggerPressed)
         {
-            _gazedAtObject?.SendMessage("OnPointerClick" ,null, SendMessageOptions.DontRequireReceiver);
+            _gazedAtObject?.SendMessage("OnPointerClick" , null, SendMessageOptions.DontRequireReceiver);
         }
     }
 
