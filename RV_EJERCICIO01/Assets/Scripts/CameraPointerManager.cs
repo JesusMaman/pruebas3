@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class CameraPointerManager : MonoBehaviour
 {
+    public static CameraPointerManager instance;
     [SerializeField] private GameObject pointer;
     [SerializeField] private float maxDistancePointer = 4.5f;
     private readonly string interactableTag = "Interactable";
@@ -15,17 +16,35 @@ public class CameraPointerManager : MonoBehaviour
     private const float _maxDistance = 10;
     private GameObject _gazedAtObject = null;
 
-    /// <summary>
-    /// Update is called once per frame.
-    /// </summary>
+    [HideInInspector]
+    public Vector3 hitPoint;
 
-    private void Start() {
-           GazeManager.Instance.OnGazeSelection += GazeSelection;
+    private void Awake()
+    {
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+        }
+        else
+        {
+            instance = this;
+        }
     }
+
+    private void Start()
+    {
+        GazeManager.Instance.OnGazeSelection += GazeSelection;
+    }
+
     private void GazeSelection()
     {
-        _gazedAtObject?.SendMessage("OnPointerClicks", null, SendMessageOptions.DontRequireReceiver);
+        _gazedAtObject?.SendMessage("OnPointerClickXR", null, SendMessageOptions.DontRequireReceiver);
     }
+    /// <summary>
+    /// 
+    /// Update is called once per frame.
+    /// </summary>
+    /// 
     public void Update()
     {
         // Casts ray towards camera's forward direction, to detect if a GameObject is being gazed
@@ -33,46 +52,50 @@ public class CameraPointerManager : MonoBehaviour
         RaycastHit hit;
         if (Physics.Raycast(transform.position, transform.forward, out hit, _maxDistance))
         {
+            hitPoint = hit.point;
             // GameObject detected in front of the camera.
             if (_gazedAtObject != hit.transform.gameObject)
             {
                 // New GameObject.
-                _gazedAtObject?.SendMessage("OnPointerExit", null, SendMessageOptions.DontRequireReceiver);
+                _gazedAtObject?.SendMessage("OnPointerExitXR", null, SendMessageOptions.DontRequireReceiver);
                 _gazedAtObject = hit.transform.gameObject;
-                _gazedAtObject.SendMessage("OnPointerEnter", null, SendMessageOptions.DontRequireReceiver);
+                _gazedAtObject.SendMessage("OnPointerEnterXR", null, SendMessageOptions.DontRequireReceiver);
+                GazeManager.Instance.StartGazeSelection();
             }
             if (hit.transform.CompareTag(interactableTag))
             {
                 PointerOnGaze(hit.point);
             }
-            else {
-                PointerOutGaze();
-            }
+            else { PointerOutGaze(); }
+
         }
         else
         {
             // No GameObject detected in front of the camera.
-            _gazedAtObject?.SendMessage("OnPointerExit" , null, SendMessageOptions.DontRequireReceiver);
+            _gazedAtObject?.SendMessage("OnPointerExitXR", null, SendMessageOptions.DontRequireReceiver);
             _gazedAtObject = null;
         }
 
         // Checks for screen touches.
         if (Google.XR.Cardboard.Api.IsTriggerPressed)
         {
-            _gazedAtObject?.SendMessage("OnPointerClick" , null, SendMessageOptions.DontRequireReceiver);
+            _gazedAtObject?.SendMessage("OnPointerClickXR", null, SendMessageOptions.DontRequireReceiver);
         }
     }
 
-    private void PointerOutGaze() { 
-        pointer.transform.localScale = Vector3.one* 0.1f;
+    private void PointerOutGaze()
+    {
+        pointer.transform.localScale = Vector3.one * 0.1f;
         pointer.transform.parent.transform.localPosition = new Vector3(0, 0, maxDistancePointer);
         pointer.transform.parent.parent.transform.rotation = transform.rotation;
         GazeManager.Instance.CancelGazeSelection();
     }
-    private void PointerOnGaze(Vector3 hitPoint) {
+    private void PointerOnGaze(Vector3 hitPoint)
+    {
         float scaleFactor = scaleSize * Vector3.Distance(transform.position, hitPoint);
         pointer.transform.localScale = Vector3.one * scaleFactor;
         pointer.transform.parent.position = CalculatePointerPosition(transform.position, hitPoint, distPointerObject);
+
     }
     private Vector3 CalculatePointerPosition(Vector3 p0, Vector3 p1, float t)
     {
